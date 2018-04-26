@@ -10,32 +10,102 @@
 	</head>
 	<body>
 		<script src="https://threejs.org/build/three.min.js"></script>
+		<script src="js/OrbitControls.js"></script>
+		<!--script src="js/FlyControls.js.js"></script-->
 		<script>
+			var geometry, material;
 			var scene = new THREE.Scene();
 			var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-
+			var controls = new THREE.OrbitControls( camera );
+			
 			var renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 			
+			var light = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
+			scene.add( light );
+			
+			/*/
 			var geometry = new THREE.BoxGeometry( 1, 1, 1 );
 			var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
 			var cube = new THREE.Mesh( geometry, material );
+			cube.position.z = -3;
 			scene.add( cube );
-
-			camera.position.z = 5;
+			/**/
+			camera.position.z = 4.1;
+			controls.update();
+				// image
+			//var texture = new THREE.Texture( generateLineralTexture() );
+			//var textureImage = texture.image;
 			
+			// background
+			// material texture
+			var texture = new THREE.Texture( generateLineralTexture() );
+			texture.needsUpdate = true; // important!
+	
+			// material
+			var material = new THREE.MeshBasicMaterial( { map: texture, overdraw: 0.5 } );	
 			
-			geometry = new THREE.PlaneGeometry(20, 20, 32 );
-			material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide} );
+			geometry = new THREE.PlaneGeometry(25, 25, 1 );
+			//geometry.addAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+			//material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide} );
 			var plane = new THREE.Mesh( geometry, material );
+			//var plane = new THREE.Mesh( floorGeometry, floorMaterial );
+			plane.position.z = -15;
 			scene.add( plane );
+			
+			// mountain
+			texture = new THREE.Texture( generateLineralTexture('#d4b5f5', '#9999bb') );
+			texture.needsUpdate = true; // important!
+	
+			// material
+			material = new THREE.MeshToonMaterial( { map: texture, overdraw: 0.5 } );	
+			
+			geometry = new THREE.TetrahedronGeometry(1, 0);
+			var pir = new THREE.Mesh( geometry, material );
+			pir.position.z = -3;
+			
+			//var pirAn = 23;
+			pir.rotation.x = THREE.Math.degToRad(-35);
+			pir.rotation.z = THREE.Math.degToRad(45);
+			pir.scale.set(2,2,2);
+			scene.add( pir );
+			
+			function generateLineralTexture(c1, c2) {
+
+				var size = 512;
+				if(c1 == undefined) {
+					c1 = '#61cabc';
+				}
+				if(c2 == undefined) {
+					c2 = '#f2f6dd';
+				}
+				// create canvas
+				canvas = document.createElement( 'canvas' );
+				canvas.width = size;
+				canvas.height = size;
+
+				// get context
+				var context = canvas.getContext( '2d' );
+
+				// draw gradient
+				context.rect( 0, 0, size, size );
+				var gradient = context.createLinearGradient( 0, 0, 0, size );
+				gradient.addColorStop(0, c1); // light blue 
+				gradient.addColorStop(0.5, c2); // dark blue
+				gradient.addColorStop(1, c2); // dark blue
+				context.fillStyle = gradient;
+				context.fill();
+
+				return canvas;
+
+			}
 			
 			function animate() {
 				requestAnimationFrame( animate );
 				
-				cube.rotation.x += 0.05;
-				cube.rotation.y += 0.1;
+				//pir.rotation.y += 0.01;
+				//pir.rotation.y += 0.01;
 				
 				renderer.render( scene, camera );
 			}
