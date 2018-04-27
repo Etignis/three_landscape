@@ -13,17 +13,52 @@
 		<script src="js/OrbitControls.js"></script>
 		<!--script src="js/FlyControls.js.js"></script-->
 		<script>
+			function randd(min, max) {
+				return Math.floor(arguments.length > 1 ? (max - min + 1) * Math.random() + min : (min + 1) * Math.random());
+			};
+			var colors_day = [
+				'rgba(97, 202, 188, 1)',
+				'rgba(242, 246, 221, 1)',
+				'rgba(254, 224, 152, 1)',
+				'rgba(253, 243, 194, 1)',
+				'rgba(195, 177, 189, 1)',
+				'rgba(253, 220, 211, 1)',
+				'rgba(204, 129, 116, 1)',
+				'rgba(236, 177, 111, 1)',
+				'rgba(177, 50, 59, 1)',
+				'rgba(255, 246, 102, 1)',
+				'rgba(180, 207, 234, 1)',
+				'rgba(214, 224, 225, 1)',
+				'rgba(79, 54, 16, 1)',
+				'rgba(133, 182, 182, 1)',
+				'rgba(92, 28, 1, 1)',
+				'rgba(131, 70, 93, 1)',
+				'rgba(62, 39, 35, 1)',
+				'rgba(255, 202, 40, 1)'
+				];
+			var sunPos = {
+				x: randd(4,18) * ((randd(0,1)>0)? 1: -1),
+				y: randd(8,17)
+			};
+			var pair = randd(0, ~~((colors_day.length-1)/2))*2; //randd(0,colors_day.length/2);
+			var color1 = colors_day[pair];
+			var color2 = colors_day[Number(1)+Number(pair)];
 			var geometry, material;
 			var scene = new THREE.Scene();
-			var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			var camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 0.1, 1000 );
 			var controls = new THREE.OrbitControls( camera );
 			
 			var renderer = new THREE.WebGLRenderer();
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			document.body.appendChild( renderer.domElement );
 			
-			var light = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
+			var light = new THREE.HemisphereLight( 0xffffbb, 0x080820, 0.5 );
 			scene.add( light );
+			
+			var directionalLight = new THREE.DirectionalLight( 0xffffbb, 0.8 );
+			scene.add( directionalLight );
+			directionalLight.position.x = sunPos.x;
+			directionalLight.position.y = sunPos.y;
 			
 			/*/
 			var geometry = new THREE.BoxGeometry( 1, 1, 1 );
@@ -40,36 +75,257 @@
 			
 			// background
 			// material texture
-			var texture = new THREE.Texture( generateLineralTexture() );
+			var texture = new THREE.Texture( generateLineralTexture(color1, color2) );
 			texture.needsUpdate = true; // important!
 	
 			// material
 			var material = new THREE.MeshBasicMaterial( { map: texture, overdraw: 0.5 } );	
 			
-			geometry = new THREE.PlaneGeometry(25, 25, 1 );
+			geometry = new THREE.PlaneGeometry(75, 75, 1 );
 			//geometry.addAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
 			//material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide} );
 			var plane = new THREE.Mesh( geometry, material );
 			//var plane = new THREE.Mesh( floorGeometry, floorMaterial );
-			plane.position.z = -15;
+			plane.position.z = -45;
+			plane.position.y = 7;
 			scene.add( plane );
 			
-			// mountain
-			texture = new THREE.Texture( generateLineralTexture('#d4b5f5', '#9999bb') );
-			texture.needsUpdate = true; // important!
-	
-			// material
-			material = new THREE.MeshToonMaterial( { map: texture, overdraw: 0.5 } );	
 			
-			geometry = new THREE.TetrahedronGeometry(1, 0);
-			var pir = new THREE.Mesh( geometry, material );
-			pir.position.z = -3;
+			createRockChains();
+			createSun();
+			createFiels();
 			
-			//var pirAn = 23;
-			pir.rotation.x = THREE.Math.degToRad(-35);
-			pir.rotation.z = THREE.Math.degToRad(45);
-			pir.scale.set(2,2,2);
-			scene.add( pir );
+			
+			function createFiels() {
+				var color = new THREE.Color(color2);
+				if (color.getHSL().l<0.9) {
+					color = color.offsetHSL(0,0,0.1);
+				}
+				function placeSphere(n) {
+					var geometry = new THREE.IcosahedronGeometry(4, 2);
+					//var material = new THREE.MeshBasicMaterial( { color: color } ); //.offsetHSL 
+					var texture = new THREE.Texture( generateLineralTexture(color2, color1) );
+					texture.needsUpdate = true; // important!
+					var material = new THREE.MeshToonMaterial( { map: texture, overdraw: 0.5 } );	
+					
+					var grass = new THREE.Mesh( geometry, material );
+					//grass.material.transparent = true;
+					//grass.material.opacity = t;
+					grass.position.z = -i-14;
+					grass.position.x = n*5 *((n%2==0)? -1: 1);
+					grass.position.y = i/1.5-1.5; // (n%2==0)? -1: 1
+					grass.scale.set(3,0.3,0.3);
+					scene.add( grass );
+				};
+				//var sunSize = randd(2, 6);
+				for (var i=0; i<3; i++) {
+					placeSphere(i);
+				}
+			}
+			
+			function createSun(){
+				var color = new THREE.Color(color2);
+				color.add(new THREE.Color("#222200"));
+				if (color.getHSL().l<0.9) {
+					color = color.offsetHSL(0,0,0.1);
+				}
+				function placeSphere(n, t) {
+					var geometry = new THREE.IcosahedronGeometry(n, 2);
+					var material = new THREE.MeshBasicMaterial( { color: color } ); //.offsetHSL 
+					var sun = new THREE.Mesh( geometry, material );
+					sun.material.transparent = true;
+					sun.material.opacity = t;
+					sun.position.z = -45;
+					sun.position.x = sunPos.x;
+					sun.position.y = sunPos.y;
+					scene.add( sun );
+				};
+				var sunSize = randd(2, 6);
+				for (var i=0; i<4; i++) {
+					placeSphere(sunSize+i/1.2, 0.9-i/5);
+				}
+			}
+			function createMountain(nPos){
+				if(!nPos) {
+					nPos=0;
+				}
+				// mountain
+				var texture = new THREE.Texture( generateLineralTexture(color1, color2) );
+				texture.needsUpdate = true; // important!
+		
+				// material
+				var material = new THREE.MeshToonMaterial( { map: texture, overdraw: 0.5 } );	
+				
+				var geometry = new THREE.TetrahedronGeometry(1, 0);
+				
+				var nScale, nBigScale, k=16; 
+				nBigScale = 1;//randd(99, 101)/100;
+				if(nPos) {
+					nScale = (nPos>0)? -nPos: nPos;
+					nBigScale = nBigScale + nScale*0.2;
+				}
+				nPos =nPos*1.3;
+				console.log(nBigScale);
+				////
+				var pir = new THREE.Mesh( geometry, material );
+				pir.position.z = -3 - Number(nBigScale*k);
+				pir.position.x = 0+Number(nPos); // left/right
+				pir.position.y = 0;// top
+				pir.rotation.x = THREE.Math.degToRad(-35);
+				pir.rotation.z = THREE.Math.degToRad(45);
+				nScale = 3*nBigScale; //randd(1.99, 2.01);
+				pir.scale.set(nScale,nScale,nScale);
+				scene.add( pir );	
+				
+					// left
+				/**/
+				var pir = new THREE.Mesh( geometry, material );
+				pir.position.z = -4.5 - Number(nBigScale*k); // deep
+				pir.position.x = -1.05+Number(nPos);// left/right
+				pir.position.y = -0.1;// top
+				pir.rotation.x = THREE.Math.degToRad(-35);
+				pir.rotation.z = THREE.Math.degToRad(45);
+				nScale = 2.6*nBigScale;//randd(1.29, 1.31); // 1.9
+				pir.scale.set(nScale,nScale,nScale);
+				scene.add( pir );	
+				
+				var pir = new THREE.Mesh( geometry, material );
+				pir.position.z = -5.9 - Number(nBigScale*k); // deep
+				pir.position.x = -2.2+Number(nPos);// left/right
+				pir.position.y = -0.3;// top
+				pir.rotation.x = THREE.Math.degToRad(-35);
+				pir.rotation.z = THREE.Math.degToRad(45);
+				nScale = 1.9*nBigScale;//randd(1.29, 1.31); // 1.215
+				pir.scale.set(nScale,nScale,nScale);
+				scene.add( pir );	
+				/**/
+			
+					// right
+				/**/
+				var pir = new THREE.Mesh( geometry, material );
+				pir.position.z = -4.5 - Number(nBigScale*k); // deep
+				pir.position.x = 1.05+Number(nPos);// left/right
+				pir.position.y = -0.1;// top
+				pir.rotation.x = THREE.Math.degToRad(-35);
+				pir.rotation.z = THREE.Math.degToRad(45);
+				nScale = 2.6*nBigScale;//randd(1.29, 1.31);
+				pir.scale.set(nScale,nScale,nScale);
+				scene.add( pir );	
+								
+				var pir = new THREE.Mesh( geometry, material );
+				pir.position.z = -5.9 - Number(nBigScale*k); // deep
+				pir.position.x = 2.2+Number(nPos);// left/right
+				pir.position.y = -0.3;// top
+				pir.rotation.x = THREE.Math.degToRad(-35);
+				pir.rotation.z = THREE.Math.degToRad(45);
+				nScale = 1.9*nBigScale;//randd(1.29, 1.31);
+				pir.scale.set(nScale,nScale,nScale);
+				scene.add( pir );	
+				/**/
+				
+					// front
+				/*/
+				var pir = new THREE.Mesh( geometry, material );
+				pir.position.z = -1.7; // deep
+				pir.position.y = -0.35;// top
+				pir.position.x = 0+Number(nPos);// left/right
+				pir.rotation.x = THREE.Math.degToRad(-35);
+				pir.rotation.z = THREE.Math.degToRad(45);
+				nScale = 1.9*nBigScale;//randd(1.09, 1.11);
+				pir.scale.set(nScale,nScale,nScale);
+				scene.add( pir );	
+				
+				var pir = new THREE.Mesh( geometry, material );
+				pir.position.z = -0.8; // deep
+				pir.position.y = -0.6;// top
+				pir.position.x = 0+Number(nPos);// left/right
+				pir.rotation.x = THREE.Math.degToRad(-35);
+				pir.rotation.z = THREE.Math.degToRad(45);
+				nScale = 1.215*nBigScale;//randd(1.09, 1.11);
+				pir.scale.set(nScale,nScale,nScale);
+				scene.add( pir );	
+				/**/
+				////
+			}
+			
+			function createRock(nPos, nDeep){
+				console.log(nPos + " " + nDeep);
+				if(!nPos) {
+					nPos=0;
+				}
+				// mountain
+				texture = new THREE.Texture( generateLineralTexture(color2, color2) );
+				texture.needsUpdate = true; // important!
+		
+				// material
+				material = new THREE.MeshToonMaterial( { map: texture, overdraw: 0.5 } );	
+				
+				geometry = new THREE.TetrahedronGeometry(1, 0);
+				
+				var nScale, nBigScale, k=1.8, shift=0; 
+				//nBigScale = 1;//randd(99, 101)/100;
+				nBigScale = Number((Math.pow(nDeep, 3.8))/90) + Number(k);
+				/**/
+				
+				if(nDeep%2==0) {
+					shift=2.6;
+					/*/
+					if(nPos<0) {
+						nPos = nPos+1;
+					} 
+					
+					console.log(nPos);
+					/**/
+				}
+				
+				if(Number.isInteger(nPos)) {
+					nScale = (nPos>0)? -nPos: nPos;
+					if(nDeep%2==0 && nPos>=0) {
+						nScale = nScale-1;
+					}
+					nBigScale = nBigScale + nScale/1.5;
+				}
+				nBigScale = nBigScale.toFixed(2) - randd(-3, 3)*0.2;
+				
+				/**/
+				//nPos =nPos*3.3;
+				//console.log(nBigScale);
+				
+				
+				var pir = new THREE.Mesh( geometry, material );
+				pir.position.z = -8 -nDeep*4; // deep
+				pir.position.x = 0+Number(nPos*1.3*(k*2)) + Number(shift); // left/right
+				pir.position.y = nDeep/4;// top
+				pir.rotation.x = THREE.Math.degToRad(-35);
+				pir.rotation.z = THREE.Math.degToRad(45);
+				nScale = nBigScale; //randd(1.99, 2.01);
+				pir.scale.set(nScale,nScale,nScale);
+				scene.add( pir );	
+				
+			}
+			
+			function createRockChain(Count){
+			
+				for(var i=0; i<Count; i++) {
+					var pos = i-Math.floor(Count/2);
+					/*/
+					if(Count%2==0 && pos<0) {
+						pos = pos+1;
+					}
+					/**/
+					createRock(pos, Count);
+				}
+			}
+			
+			function createRockChains(){
+				/**/
+				for(var i=5; i>2; i--) {
+					createRockChain(i);
+				}
+				/**/
+				
+				//createRockChain(5);
+			}
 			
 			function generateLineralTexture(c1, c2) {
 
